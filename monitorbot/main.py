@@ -481,52 +481,29 @@ def run():
             await interaction.response.send_message(f"❌​ {interaction.user}, você não tem permissão para usar esse comando!")
             
     
-    #Puxa as informações dos alunos.
-    @bot.tree.command(name="veruser", description="Mostra seu perfil no servidor.")
-    async def veruser(interaction: discord.Interaction):
-        member: discord.Member
-        member = interaction.user
-        #roles = [role for role in member.roles]
-        id = value=member.id
-        matricula = get_id(id)
-        nome = get_nome(int(matricula))
-        turma = get_turma(int(matricula))
-        embed = discord.Embed(title="Informações do seu usuário", description=f"Aqui estão as informações do seu usuário.", color=0x0000FF, timestamp=datetime.datetime.utcnow())
-        embed.set_thumbnail(url=member.avatar)
-        embed.add_field(name="ID:", value=member.id)
-        embed.add_field(name="Nome:", value=nome)
-        embed.add_field(name="Matrícula:", value=matricula)
-        embed.add_field(name="Nick:", value=f"{member.name}#{member.discriminator}")
-        embed.add_field(name="Turma:", value=turma)
-        embed.add_field(name="Criado em:", value=member.created_at.strftime("%#d %B %Y "))
-        embed.add_field(name="Entrou em:", value=member.joined_at.strftime("%a, %#d %B %Y "))
-        #embed.add_field(name=f"Cargos ({len(roles)})", value=" ".join([role.mention for role in roles]))
-        await interaction.response.send_message(embed=embed)
-    
     @bot.tree.command(name="resultadominiteste", description="Veja os resultados dos miniteste!")
-    async def resultadominiteste(interaction: discord.Interaction, teste: str):
-
-        numero_miniteste = get_teste(teste)
-
+    async def resultadosminiteste(interaction: discord.Interaction, teste: str):
+        vteste = 'T'+teste
+        porcentagem = get_porcentagem_letras(vteste)
+        total_alunos = get_total_alunos_responderam(vteste)
+        teste = get_teste(teste)
         respostas = ""
-
-        if teste is not None:
-
-            total_alunos_responderam = get_total_alunos_responderam(numero_miniteste)
-            porcentagens_letras = get_porcentagem_letras(numero_miniteste)
-
-            for item in teste['resposta'].values():
-                respostas = respostas + item + '\n'
-
-            embed2 = discord.Embed(title=teste['pergunta'], description=respostas, color=0x0000FF)
-
-            porcentagens_str = "\n".join([f"Letra {letra}: {porcentagem:.2f}% ({count}/{total_alunos_responderam} alunos)" for letra, porcentagem, count in zip(porcentagens_letras.keys(), porcentagens_letras.values(), porcentagens_letras.values())])
-
-            embed2.add_field(name="Porcentagens de respostas:", value=porcentagens_str, inline=False)
-
-            await interaction.response.send_message(embed=embed2, view=ButtonsFor(numero_miniteste))
+        id_user = interaction.user.id
+        userstring = str(id_user)
+        user_comparado = verificar_permissao(userstring)
+        if user_comparado == str(id_user):
+        
+            if(teste != None):
+                for chave, item in teste['resposta'].items():
+                    respostas = respostas + item + " " + str(porcentagem[chave]) + "%"  + '\n' 
+                respostas = respostas + '\n' + "Total de alunos que responderam: " + str(total_alunos)
+                embed2 = discord.Embed(title=teste['pergunta'], description=respostas, color=0x0000FF)
+                await interaction.response.send_message(embed=embed2)
+            else:
+                await interaction.response.send_message(content=f"{interaction.user} este teste não existe, digite um teste válido!")
+        
         else:
-            await interaction.response.send_message(content=f"{interaction.user.mention} este teste não existe, digite um teste válido!")
+            await interaction.response.send_message(f"❌​ {interaction.user}, você não tem permissão para usar esse comando!")
         
     bot.run(settings.TOKEN_BOT, root_logger=True)
 
