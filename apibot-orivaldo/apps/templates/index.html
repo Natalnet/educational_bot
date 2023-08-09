@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Bot - LOP</title>
+    <style>
+        html {
+            background: url(/static/lop.png) no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #007bff;
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-shadow: 10px 10px 10px rgba(0, 0, 0, 0.3);
+            letter-spacing: 2px;
+        }
+
+        form {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            padding: 15px;
+            width: 400px;
+            font-size: 20px;
+            border: 1px solid #000000;
+            border-radius: 5px;
+            outline: none;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        button[type="submit"] {
+            padding: 20px 25px;
+            font-size: 15px;
+            border: 1px solid #000000;
+            border-radius: 10px;
+            background-color: hsl(211, 100%, 50%);
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        #respostaDiv {
+            padding: 20px;
+            background-color: hsl(211, 100%, 50%);
+            border-radius: 5px;
+            box-shadow: 3px 2px 4px hsl(211, 100%, 21%);
+            max-width: 600px;
+        }
+
+        #respostaDiv p {
+            font-size: 18px;
+            color: #000000;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Monitor Bot - LOP</h1>
+    <div>
+        <form id="perguntaForm">
+            <input type="text" id="perguntaInput" placeholder="Digite sua pergunta...">
+            <button type="submit">Enviar</button>
+        </form>
+    </div>
+    <div id="respostaDiv"></div>
+    <script>
+        document.getElementById("perguntaForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            fazerPergunta();
+        });
+
+        function fazerPergunta() {
+            const perguntaInput = document.getElementById("perguntaInput").value;
+
+            fetch('/pergunta', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ mensagem: perguntaInput })
+            })
+                .then(response => response.text())
+                .then(resposta => {
+                    exibirResposta(resposta);
+                })
+                .catch(error => console.error('Erro:', error));
+        }
+
+        function exibirResposta(resposta) {
+            const respostaDiv = document.getElementById("respostaDiv");
+            if (resposta === "null") {
+                respostaDiv.innerHTML = "<p><strong>Monitor Bot:</strong> Nenhuma resposta encontrada.</p>";
+            } else {
+                respostaDiv.innerHTML = `<p><strong>Monitor Bot:</strong> ${resposta}</p>`;
+            }
+        }
+    </script>
+</body>
+
+</html>
