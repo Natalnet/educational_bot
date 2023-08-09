@@ -198,11 +198,14 @@ def get_log(log):
       return(id)
 
 def get_teste(teste):
-    requisicao = requests.get(f'{urlBD}/minitestes/.json')
-    for id in requisicao.json():
-        if teste == requisicao.json()[id]["teste"]:
-            return requisicao.json()[id]
-    return None
+    
+  requisicao = requests.get(f'{urlBD}/minitestes/.json')
+  
+  teste = "T"+teste
+  
+  for id in requisicao.json():
+    if teste == requisicao.json()[id]["teste"]:
+      return(requisicao.json()[id])
 
 def le_permissao():
       #le perguntas
@@ -314,7 +317,6 @@ def get_total_alunos_responderam(numero_miniteste):
 
     return total_alunos_responderam
 
-
 def get_porcentagem_letras(numero_miniteste):
     requisicao = le_alunos()
 
@@ -336,3 +338,14 @@ def get_porcentagem_letras(numero_miniteste):
         porcentagens[letra] = (count / total_alunos_responderam) * 100 if total_alunos_responderam > 0 else 0
 
     return porcentagens
+  
+def cria_aluno(nome, matricula, turma):
+    dicionario_aluno = {
+        'nome': nome,
+        'matricula': matricula,
+        'turma': turma,
+        'id': 0
+    }
+    json_aluno = json.dumps(dicionario_aluno)
+    requisicao = requests.post(f'{urlBD}/alunos/.json', data=json_aluno)
+    return requisicao.status_code == 200
