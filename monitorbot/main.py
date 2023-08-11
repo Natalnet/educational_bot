@@ -65,7 +65,7 @@ def run():
         
     
     #verifica as informações do usuário informado
-    @bot.tree.command(name="userinfo", description="Mostra informações do usuário informado.")
+    @bot.tree.command(name="userinfo", description="Mostra informações do usuário.")
     async def info(interaction: discord.Interaction, member:discord.Member=None):
         id_user = interaction.user.id
         userstring = str(id_user)
@@ -102,12 +102,17 @@ def run():
             await interaction.response.send_message(f"❌​ {interaction.user}, você não tem permissão para usar esse comando!")
     
     
-    @bot.tree.command(name="myuser", description="Mostra informações do seu usuário no servidor.")
+    @bot.tree.command(name="myuser", description="Mostra informações do seu usuário.")
     async def myuser(interaction: discord.Interaction):
-            member:discord.Member=None
-            member = interaction.user
-            roles = [role for role in member.roles]
-            id = member.id
+        member: discord.Member = None
+        member = interaction.user
+        roles = [role for role in member.roles]
+        id = member.id
+
+        # Try to get information using verificar_info
+        nome_verificar, cargo_verificar = verificar_info(id)
+
+        if nome_verificar is None: 
             try:
                 matricula = get_id(id)
                 nome = get_nome(matricula)
@@ -117,19 +122,25 @@ def run():
                 matricula = "Não cadastrado"
                 nome = "Não cadastrado"
                 turma = "Não cadastrado"
-            embed = discord.Embed(title="📄 Informações do seu usuário:", color=0x0000FF, timestamp=datetime.datetime.utcnow())
-            embed.set_thumbnail(url=member.avatar)
-            embed.add_field(name="🆔 ID:", value=member.id)
-            embed.add_field(name="👤 Nome:", value=nome)
-            embed.add_field(name="🎓 Matrícula:", value=matricula)
-            embed.add_field(name="🏷️ Nick:", value=f"{member.name}#{member.discriminator}")
-            embed.add_field(name="🗂️ Turma:", value=turma)
-            embed.add_field(name="📅 Criado em:", value=member.created_at.strftime("%#d %B %Y "))
-            embed.add_field(name="🚪 Entrou em:", value=member.joined_at.strftime("%a, %#d %B %Y "))
-            #embed.add_field(name=f"Cargos ({len(roles)})", value=" ".join([role.mention for role in roles]))
-            #embed.add_field(name="Status:", value=member.status)
-            embed.add_field(name="🤖 Bot:", value=member.bot)
-            await interaction.response.send_message(embed=embed)
+
+        else:
+            matricula = id
+            nome = nome_verificar
+            turma = cargo_verificar
+            
+        embed = discord.Embed(title="📄 Informações do seu usuário:", color=0x0000FF, timestamp=datetime.datetime.utcnow())
+        embed.set_thumbnail(url=member.avatar)
+        embed.add_field(name="🆔 ID:", value=member.id)
+        embed.add_field(name="👤 Nome:", value=nome)
+        embed.add_field(name="🎓 Matrícula:", value=matricula)
+        embed.add_field(name="🏷️ Nick:", value=f"{member.name}#{member.discriminator}")
+        embed.add_field(name="🗂️ Turma:", value=turma)
+        embed.add_field(name="📅 Criado em:", value=member.created_at.strftime("%#d %B %Y "))
+        embed.add_field(name="🚪 Entrou em:", value=member.joined_at.strftime("%a, %#d %B %Y "))
+        #embed.add_field(name=f"Cargos ({len(roles)})", value=" ".join([role.mention for role in roles]))
+        #embed.add_field(name="Status:", value=member.status)
+        embed.add_field(name="🤖 Bot:", value=member.bot)
+        await interaction.response.send_message(embed=embed)
     
     # classe para mostrar os botões do miniteste.   
     class ButtonsFor(discord.ui.View):

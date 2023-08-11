@@ -236,6 +236,15 @@ def verificar_permissao(id_p):
     if id_p == requisicao.json()[id]["id"]:
       return(requisicao.json()[id]["id"])
     
+def verificar_info(id_p):
+  requisicao = le_permissao()
+
+  id = str(id_p)
+
+  for id in requisicao.json():
+    if id_p == requisicao.json()[id]["id"]:
+      return(requisicao.json()[id]["id"])
+    
 def get_frequencia():
       
   requisicao = le_alunos()
@@ -349,3 +358,15 @@ def cria_aluno(nome, matricula, turma):
     json_aluno = json.dumps(dicionario_aluno)
     requisicao = requests.post(f'{urlBD}/alunos/.json', data=json_aluno)
     return requisicao.status_code == 200
+  
+def verificar_info(id_p):
+  requisicao = le_permissao()
+  json_data = requisicao.json()
+
+  id_str = str(id_p)
+
+  for id in json_data:
+      if id_str == json_data[id]["id"]:
+          return json_data[id]["nome"], json_data[id]["cargo"]
+
+  return None, None
