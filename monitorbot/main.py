@@ -75,15 +75,23 @@ def run():
                 member = interaction.user
             roles = [role for role in member.roles]
             id = member.id
-            try:
-                matricula = get_id(id)
-                nome = get_nome(matricula)
-                turma = get_turma(matricula)
+            nome_verificar, cargo_verificar = verificar_info(id)
 
-            except:
-                matricula = "Não cadastrado"
-                nome = "Não cadastrado"
-                turma = "Não cadastrado"
+            if nome_verificar is None: 
+                try:
+                    matricula = get_id(id)
+                    nome = get_nome(matricula)
+                    turma = get_turma(matricula)
+
+                except:
+                    matricula = "Não cadastrado"
+                    nome = "Não cadastrado"
+                    turma = "Não cadastrado"
+
+            else:
+                matricula = id
+                nome = nome_verificar
+                turma = cargo_verificar
             embed = discord.Embed(title="📄 Informações do usuário:", color=0x0000FF, timestamp=datetime.datetime.utcnow())
             embed.set_thumbnail(url=member.avatar)
             embed.add_field(name="🆔 ID:", value=member.id)
