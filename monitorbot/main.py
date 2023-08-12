@@ -14,6 +14,7 @@ import json
 import xlsxwriter
 import typing
 import pandas as pd
+import random
 
 logger = settings.logging.getLogger('bot')
 
