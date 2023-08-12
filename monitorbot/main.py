@@ -163,7 +163,7 @@ def run():
                 member = interaction.user
             if not self.respondido:
                 self.respondido = True
-                id = value=member.id
+                id = member.id
                 matricula = get_id(id)
                 puxar_aluno = get_aluno_id(matricula)
                 add_resposta(puxar_aluno, self.nome_miniteste, 'A')
@@ -177,7 +177,7 @@ def run():
                 member = interaction.user
             if not self.respondido:
                 self.respondido = True
-                id = value=member.id
+                id = member.id
                 matricula = get_id(id)
                 puxar_aluno = get_aluno_id(matricula)
                 add_resposta(puxar_aluno, self.nome_miniteste, 'B')
@@ -191,7 +191,7 @@ def run():
                 member = interaction.user
             if not self.respondido:
                 self.respondido = True
-                id = value=member.id
+                id = member.id
                 matricula = get_id(id)
                 puxar_aluno = get_aluno_id(matricula)
                 add_resposta(puxar_aluno, self.nome_miniteste, 'C')
@@ -205,7 +205,7 @@ def run():
                 member = interaction.user
             if not self.respondido:
                 self.respondido = True
-                id = value=member.id
+                id = member.id
                 matricula = get_id(id)
                 puxar_aluno = get_aluno_id(matricula)
                 add_resposta(puxar_aluno, self.nome_miniteste, 'D')
