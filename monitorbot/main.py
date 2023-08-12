@@ -567,6 +567,60 @@ def run():
         
         else:
             await ctx.send(f"❌​ {ctx.author.mention}, você não tem permissão para usar esse comando!")
+    
+    # classe para mostrar os botões do miniteste.   
+    class ButtonSorteio(discord.ui.View):
+        def __init__(self, participantes):
+            super().__init__(timeout=None)
+            self.respondido = False
+            self.participantes = participantes
+        @discord.ui.button(label="Participar", style=discord.ButtonStyle.green, custom_id="participar_sorteio")
+        async def participar_sorteio(self, interaction: discord.Interaction, Button: discord.ui.Button, member:discord.Member=None):
+            if member == None:
+                member = interaction.user
+            if not self.respondido:
+                self.respondido = True
+                id = member.id
+                if id not in self.participantes:
+                    self.participantes.append(id)
+                    await interaction.response.send_message(content=f"{member.name} entrou no sorteio! 🎁 ")
+            else:
+                await interaction.response.send_message(content=f"{member.name} sua respotas ja foi registrada! 🎲")
+    
+        @discord.ui.button(label="Encerrar", style=discord.ButtonStyle.red, custom_id="encerrar_sorteio")
+        async def encerrar_sorteio(self, interaction: discord.Interaction, Button: discord.ui.Button, member:discord.Member=None):
+            if member == None:
+                member = interaction.user
+                id_user = interaction.user.id
+                userstring = str(id_user)
+                user_comparado = verificar_permissao(userstring)
+                if user_comparado == str(id_user):
+                    if self.participantes:
+                        winner_id = random.choice(self.participantes)
+                        winner = await bot.fetch_user(winner_id)
+                        await interaction.response.send_message(content=f"O sorteio foi encerrado! O vencedor é: **{winner.mention}** 🏆")
+                        self.participants = []
+                    else:
+                        await interaction.response.send_message(content="Não há participantes no sorteio. 🚫")
+
+                else:
+                    await interaction.response.send_message(content=f"{member.name} você não tem permissão para usar esse comando! 🔺")
+    
+    @bot.tree.command(name="sorteio", description="Realize um sorteio")
+    async def sorteio(interaction: discord.Interaction):
+        id_user = interaction.user.id
+        userstring = str(id_user)
+        user_comparado = verificar_permissao(userstring)
+        if user_comparado == str(id_user):
+            participantes = []
+            embedSorteio = discord.Embed(
+                title="➡ Sorteio! ⬅",
+                description="Clique no botão abaixo para ter a chance de particpiar e ganhar um incrível prêmio! 🍀",
+                color=0x0000FF
+            )
+            await interaction.response.send_message(embed=embedSorteio, view=ButtonSorteio(participantes))
+        else:
+            await interaction.response.send_message(f"❌​ {interaction.user}, você não tem permissão para usar esse comando!")
         
     bot.run(settings.TOKEN_BOT, root_logger=True)
 
