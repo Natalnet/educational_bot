@@ -6,7 +6,7 @@ from discord import utils, app_commands, ui
 from discord.ext.commands import Context
 from re import A
 import datetime
-from api import get_aluno_id, get_nome, set_presenca, comparar_id, add_id, get_id, reset_id, get_turma, add_resposta, cria_aluno, cria_pergunta, le_logs, deleta_logs, get_log, get_teste, cria_permissao, verificar_permissao, get_frequencia, get_miniteste, consolidar_turma, get_permissao_id, remover_permissao, get_porcentagem_letras, get_total_alunos_responderam, cria_aluno, verificar_info
+from api import get_aluno_id, get_nome, set_presenca, comparar_id, add_id, get_id, reset_id, get_turma, add_resposta, cria_aluno, cria_pergunta, le_logs, deleta_logs, get_log, get_teste, cria_permissao, verificar_permissao, get_frequencia, get_miniteste, consolidar_turma, get_permissao_id, remover_permissao, get_porcentagem_letras, get_total_alunos_responderam, cria_aluno, verificar_info, obter_alunos_cadastrados_firebase
 from colorama import Back, Fore, Style
 import time
 import os
@@ -269,9 +269,10 @@ def run():
     async def cadastrar(interaction: discord.Interaction, matricula: str):
         id = str(interaction.user.id)
         aluno_id = get_aluno_id(matricula)
-        validar = comparar_id(matricula)
+        validar = comparar_id(int(matricula))
         nome = get_nome(matricula)
-        if validar == 0 or validar == None or validar == "0":
+        print(validar)
+        if int(validar) == int(matricula):
             add_id(aluno_id, id)
             await interaction.response.send_message(f"✅​ {nome}, seu id foi registrada com sucesso!")
         else:
@@ -362,7 +363,7 @@ def run():
             nome = self.nome.value
             matricula = self.matricula.value
             turma = self.turma.value
-            cria_aluno(nome, matricula, turma, 0)
+            cria_aluno(nome, int(matricula), turma)
             await interaction.response.send_message(f"Aluno {nome} criado com sucesso! ✅​", ephemeral=True)
     
     # função que chama a classe e mostra o modal para criar o aluno no banco de dados.    
@@ -538,29 +539,6 @@ def run():
         else:
             await interaction.response.send_message(f"❌​ {interaction.user}, você não tem permissão para usar esse comando!")
             
-    
-    #Puxa as informações dos alunos.
-    @bot.tree.command(name="veruser", description="Mostra seu perfil no servidor.")
-    async def veruser(interaction: discord.Interaction):
-        member: discord.Member
-        member = interaction.user
-        #roles = [role for role in member.roles]
-        id = value=member.id
-        matricula = get_id(id)
-        nome = get_nome(int(matricula))
-        turma = get_turma(int(matricula))
-        embed = discord.Embed(title="Informações do seu usuário", description=f"Aqui estão as informações do seu usuário.", color=0x0000FF, timestamp=datetime.datetime.utcnow())
-        embed.set_thumbnail(url=member.avatar)
-        embed.add_field(name="ID:", value=member.id)
-        embed.add_field(name="Nome:", value=nome)
-        embed.add_field(name="Matrícula:", value=matricula)
-        embed.add_field(name="Nick:", value=f"{member.name}#{member.discriminator}")
-        embed.add_field(name="Turma:", value=turma)
-        embed.add_field(name="Criado em:", value=member.created_at.strftime("%#d %B %Y "))
-        embed.add_field(name="Entrou em:", value=member.joined_at.strftime("%a, %#d %B %Y "))
-        #embed.add_field(name=f"Cargos ({len(roles)})", value=" ".join([role.mention for role in roles]))
-        await interaction.response.send_message(embed=embed)
-
             
             
     @bot.tree.command(name="resultadominiteste", description="Veja os resultados dos miniteste!")
@@ -594,24 +572,35 @@ def run():
         id_user = ctx.author.id
         userstring = str(id_user)
         user_comparado = verificar_permissao(userstring)
+        
         if user_comparado == str(id_user):
             if ctx.message.attachments:
                 anexo = ctx.message.attachments[0]
                 
                 nome_do_arquivo = anexo.filename
                 
-                await anexo.save(anexo.filename)  # Salva o arquivo localmente
+                await anexo.save(anexo.filename)
                 
                 try:
                     planilha = pd.read_csv(anexo.filename)
-
+                    alunos_cadastrados_firebase = obter_alunos_cadastrados_firebase()
+                    
+                    alunos_novos = []
+                    
                     for index, row in planilha.iterrows():
                         nome = row['Nome']
                         matricula = row['Matrícula']
                         turma = row['sub_turma']
-                        cria_aluno(nome, matricula, turma)
-
-                    await ctx.send(f"Turma upada com sucesso para o banco de dados: {nome_do_arquivo} ✅​")
+                        
+                        # Verifica se o nome do aluno já está cadastrado no Firebase
+                        if nome not in alunos_cadastrados_firebase:
+                            cria_aluno(nome, matricula, turma)
+                            alunos_novos.append(nome)
+                    
+                    if alunos_novos:
+                        await ctx.send(f"{ctx.author.mention}, Alunos cadastrados com sucesso: {', '.join(alunos_novos)} ✅")
+                    else:
+                        await ctx.send("Nenhuma aluno novo cadastrado 🚫.")
                 except Exception as e:
                     await ctx.send(f"Ocorreu um erro ao processar o arquivo: {e} ❌")
                 
@@ -619,9 +608,8 @@ def run():
                 os.remove(anexo.filename)
             else:
                 await ctx.send("Nenhum arquivo anexado.")
-        
         else:
-            await ctx.send(f"❌​ {ctx.author.mention}, você não tem permissão para usar esse comando!")
+            await ctx.send(f"❌ {ctx.author.mention}, você não tem permissão para usar esse comando!")
     
     # classe para mostrar os botões do miniteste.   
     class ButtonSorteio(discord.ui.View):

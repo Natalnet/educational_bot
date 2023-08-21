@@ -108,13 +108,14 @@ def add_id(aluno_id, id):
 
 
 def comparar_id(matricula):
-  requisicao = le_alunos()
-
-  matricula = int(matricula)
-
-  for id in requisicao.json():
-    if matricula == requisicao.json()[id]["matricula"]:
-      return(requisicao.json()[id]["matricula"])
+    requisicao = le_alunos()
+    matricula = int(matricula)
+    
+    for id in requisicao.json():
+        if matricula == requisicao.json()[id]['matricula']:
+            return matricula
+    
+    return False
 
 
 def get_id(matricula):
@@ -370,3 +371,13 @@ def verificar_info(id_p):
           return json_data[id]["nome"], json_data[id]["cargo"]
 
   return None, None
+
+def obter_alunos_cadastrados_firebase():
+    
+    response = requests.get(f'{urlBD}/alunos/.json')
+    
+    if response.status_code == 200:
+        alunos_firebase = response.json()
+        return [aluno['nome'] for aluno in alunos_firebase.values()]
+    else:
+        return []
