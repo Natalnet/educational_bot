@@ -421,29 +421,32 @@ def run():
 
             dias = sorted(dias)
 
-            #Cria a planilha e define o nome da página
-            workbook = xlsxwriter.Workbook('presenca.xlsx')
-            pag = workbook.add_worksheet(name = 'frequências')
+            # Cria um arquivo em memória
+            excel_buffer = io.BytesIO()
 
-            #imprime o cabeçalho
+            # Cria a planilha e define o nome da página
+            workbook = xlsxwriter.Workbook(excel_buffer, {'in_memory': True})
+            pag = workbook.add_worksheet(name='frequências')
+
+            # imprime o cabeçalho
             pag.write(0, 0, "Aluno")
 
             for i in range(len(dias)):
                 pag.write(0, i+1, dias[i])
             
-            #imprime matriculas
+            # imprime matriculas
             posicao = 1
             for matricula in freq:
                 pag.write(posicao, 0, matricula)
                 posicao+=1
             
-            #preenche tudo com zero
+            # preenche tudo com zero
 
             for i in range(len(dias)):
                 for j in range(len(freq)):
                     pag.write(j+1, i+1, 0)
 
-            #imprime as frequencias
+            # imprime as frequencias
             posicao = 1
             for matricula in freq:
                 for dia in freq[matricula]:
@@ -453,13 +456,13 @@ def run():
 
             workbook.close()
 
-            await interaction.response.send_message('Arquivo xlsx gerado com sucesso.')
-            await interaction.response.send_message(file=discord.File('presenca.xlsx'))
-            
-            os.remove('presenca.xlsx')
-        
+            excel_buffer.seek(0)  # Volta ao início do buffer
+
+            # Envia o arquivo como parte da resposta
+            await interaction.response.send_message(f'✅ {interaction.user}, arquivo xlsx gerado com sucesso.', file=discord.File(excel_buffer, filename='presenca.xlsx'))
+
         else:
-            await interaction.response.send_message(f"❌​ {interaction.user}, você não tem permissão para usar esse comando!")
+            await interaction.response.send_message(f"❌ {interaction.user}, você não tem permissão para usar esse comando!")
     
     
     # função para puxar os logs de perguntas sem respostas na API.
