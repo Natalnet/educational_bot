@@ -381,3 +381,20 @@ def obter_alunos_cadastrados_firebase():
         return [aluno['nome'] for aluno in alunos_firebase.values()]
     else:
         return []
+      
+def le_unidades():
+      
+  requisicao = requests.get(f'{urlBD}/unidades/.json')
+  
+  return(requisicao)
+
+def get_data_unidade():
+    requisicao = le_unidades()  # Substitua pela função que obtém os dados das unidades
+
+    datas_unidades = {}
+
+    for id, unidade_data in requisicao.json().items():
+        for unidade, data in unidade_data.items():
+            datas_unidades[unidade] = data
+
+    return datas_unidades
