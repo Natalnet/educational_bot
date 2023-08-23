@@ -202,12 +202,12 @@ def get_teste(teste):
     
   requisicao = requests.get(f'{urlBD}/minitestes/.json')
   
-  teste = "T"+teste
+  teste = "T" + str(teste)
   
   for id in requisicao.json():
     if teste == requisicao.json()[id]["teste"]:
       return(requisicao.json()[id])
-
+    
 def le_permissao():
       #le perguntas
   requisicao = requests.get(f'{urlBD}/permissao/.json')
