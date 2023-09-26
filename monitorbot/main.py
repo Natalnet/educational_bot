@@ -6,7 +6,7 @@ from discord import utils, app_commands, ui
 from discord.ext.commands import Context
 from re import A
 import datetime
-from api import get_aluno_id, get_nome, set_presenca, comparar_id, add_id, get_id, reset_id, get_turma, add_resposta, cria_aluno, cria_pergunta, le_logs, deleta_logs, get_log, get_teste, cria_permissao, verificar_permissao, get_frequencia, get_miniteste, consolidar_turma, get_permissao_id, remover_permissao, get_porcentagem_letras, get_total_alunos_responderam, cria_aluno, verificar_info, obter_alunos_cadastrados_firebase, get_data_unidade
+from api import get_aluno_id, get_nome, set_presenca, comparar_matricula, add_id, get_matricula, reset_id, get_turma, add_resposta, cria_aluno, cria_pergunta, le_logs, deleta_logs, get_log, get_teste, cria_permissao, verificar_permissao, get_frequencia, get_miniteste, consolidar_turma, get_permissao_id, remover_permissao, get_porcentagem_letras, get_total_alunos_responderam, cria_aluno, verificar_info, obter_alunos_cadastrados_firebase, get_data_unidade, get_alunos_sem_presenca, get_alunos_sem_miniteste, get_aluno_info, get_minitestes_por_matricula
 from colorama import Back, Fore, Style
 import time
 import os
@@ -56,7 +56,7 @@ def run():
         embed.set_author(name=member.name, icon_url=member.avatar)
         await canal.send(embed=embed)
 
-    ##603318662228607018
+    
     @bot.event
     async def on_member_join(member: discord.Member):
         guild = member.guild
@@ -81,7 +81,7 @@ def run():
 
             if nome_verificar is None: 
                 try:
-                    matricula = get_id(id)
+                    matricula = get_matricula(id)
                     nome = get_nome(matricula)
                     turma = get_turma(matricula)
 
@@ -116,7 +116,6 @@ def run():
     async def myuser(interaction: discord.Interaction):
         member: discord.Member = None
         member = interaction.user
-        roles = [role for role in member.roles]
         id = member.id
 
         # Try to get information using verificar_info
@@ -124,7 +123,7 @@ def run():
 
         if nome_verificar is None: 
             try:
-                matricula = get_id(id)
+                matricula = get_matricula(id)
                 nome = get_nome(matricula)
                 turma = get_turma(matricula)
 
@@ -147,8 +146,6 @@ def run():
         embed.add_field(name="🗂️ Turma:", value=turma)
         embed.add_field(name="📅 Criado em:", value=member.created_at.strftime("%#d %B %Y "))
         embed.add_field(name="🚪 Entrou em:", value=member.joined_at.strftime("%a, %#d %B %Y "))
-        #embed.add_field(name=f"Cargos ({len(roles)})", value=" ".join([role.mention for role in roles]))
-        #embed.add_field(name="Status:", value=member.status)
         embed.add_field(name="🤖 Bot:", value=member.bot)
         await interaction.response.send_message(embed=embed)
     
@@ -165,7 +162,7 @@ def run():
             if not self.respondido:
                 self.respondido = True
                 id = member.id
-                matricula = get_id(id)
+                matricula = get_matricula(id)
                 puxar_aluno = get_aluno_id(matricula)
                 add_resposta(puxar_aluno, self.nome_miniteste, 'A')
                 await interaction.response.send_message(content=f"{member.name} sua respotas foi registrada! 🔹")
@@ -179,7 +176,7 @@ def run():
             if not self.respondido:
                 self.respondido = True
                 id = member.id
-                matricula = get_id(id)
+                matricula = get_matricula(id)
                 puxar_aluno = get_aluno_id(matricula)
                 add_resposta(puxar_aluno, self.nome_miniteste, 'B')
                 await interaction.response.send_message(content=f"{member.name} sua respotas foi registrada! 🔹")
@@ -193,7 +190,7 @@ def run():
             if not self.respondido:
                 self.respondido = True
                 id = member.id
-                matricula = get_id(id)
+                matricula = get_matricula(id)
                 puxar_aluno = get_aluno_id(matricula)
                 add_resposta(puxar_aluno, self.nome_miniteste, 'C')
                 await interaction.response.send_message(content=f"{member.name} sua respotas foi registrada! 🔹")
@@ -207,7 +204,7 @@ def run():
             if not self.respondido:
                 self.respondido = True
                 id = member.id
-                matricula = get_id(id)
+                matricula = get_matricula(id)
                 puxar_aluno = get_aluno_id(matricula)
                 add_resposta(puxar_aluno, self.nome_miniteste, 'D')
                 await interaction.response.send_message(content=f"{member.name} sua respotas foi registrada! 🔹")
@@ -311,7 +308,7 @@ def run():
     async def cadastrar(interaction: discord.Interaction, matricula: str):
         id = str(interaction.user.id)
         aluno_id = get_aluno_id(matricula)
-        validar = comparar_id(int(matricula))
+        validar = comparar_matricula(int(matricula))
         nome = get_nome(matricula)
         print(validar)
         if int(validar) == int(matricula):
@@ -324,8 +321,8 @@ def run():
     @bot.command(aliases=['presença'])
     async def presenca(ctx):
         id = str(ctx.author.id)
-        matricula = get_id(id)
-        validar = comparar_id(matricula)
+        matricula = get_matricula(id)
+        validar = comparar_matricula(matricula)
         aluno_id = get_aluno_id(matricula)
         nome = get_nome(matricula)
         print(id)
@@ -390,6 +387,9 @@ def run():
             embedVar.add_field(name="/consolidarturma", value="o comando da permissão para consolidar a turma no banco de dados", inline=False)
             embedVar.add_field(name="/resultadominiteste", value="o comando mostra os resultados do miniteste informado", inline=False)
             embedVar.add_field(name="!uparturma", value="o comando envia o arquivo com as informações dos alunos para o banco de dados", inline=False)
+            embedVar.add_field(name="/alunosemfrequencia", value="o comando mostra os alunos que não possuem frequência no banco de dados", inline=False)
+            embedVar.add_field(name="/alunosemteste", value="o comando mostra os alunos que não possuem miniteste respondido no banco de dados", inline=False)
+            embedVar.add_field(name="/buscaraluno", value="o comando o aluno no banco de dados", inline=False)
             await interaction.response.send_message(embed=embedVar)
         else:
             await interaction.response.send_message(f"❌​ {interaction.user}, você não tem permissão para usar esse comando!")
@@ -709,7 +709,130 @@ def run():
             await interaction.response.send_message(embed=embedSorteio, view=ButtonSorteio(participantes))
         else:
             await interaction.response.send_message(f"❌​ {interaction.user}, você não tem permissão para usar esse comando!")
+            
+            
+    
+    @bot.tree.command(name="alunosemfrequencia", description="Aluno que nao possuem frequência")
+    async def alunosnotfreq(interaction: discord.Interaction):
+        id_user = interaction.user.id
+        userstring = str(id_user)
+        user_comparado = verificar_permissao(userstring)
         
+        if user_comparado == str(id_user):
+            alunos_sem_presenca = get_alunos_sem_presenca()
+            
+            if alunos_sem_presenca:
+                embed = discord.Embed(
+                    title="Alunos sem presença:",
+                    color=discord.Color.blue()
+                )
+                for aluno in alunos_sem_presenca:
+                    embed.add_field(
+                        name=f"Matrícula: {aluno['matricula']}",
+                        value=f"Nome: {aluno['nome']}\nTurma: {aluno['turma']}",
+                        inline=False
+                    )
+
+                await interaction.response.send_message(embed=embed)
+            else:
+                await interaction.response.send_message("✅{interaction.user.mention}, todos os alunos registraram presença!")
+        else:
+            await interaction.response.send_message(f"❌ {interaction.user.mention}, você não tem permissão para usar esse comando.")
+
+    @bot.tree.command(name="alunosemteste", description="Aluno que não realizaram o miniteste")
+    async def alunosnotminiteste(interaction: discord.Interaction):
+        id_user = interaction.user.id
+        userstring = str(id_user)
+        user_comparado = verificar_permissao(userstring)
+        
+        if user_comparado == str(id_user):
+            alunos_sem_miniteste = get_alunos_sem_miniteste()
+            
+            if alunos_sem_miniteste:
+                embed = discord.Embed(
+                    title="Alunos sem miniteste:",
+                    color=discord.Color.blue()
+                )
+                for aluno in alunos_sem_miniteste:
+                    embed.add_field(
+                        name=f"Matrícula: {aluno['matricula']}",
+                        value=f"Nome: {aluno['nome']}\nTurma: {aluno['turma']}",
+                        inline=False
+                    )
+
+                await interaction.response.send_message(embed=embed)
+            else:
+                await interaction.response.send_message("✅ {interaction.user.mention}, todos os alunos fizeram o miniteste!")
+                
+        else:
+            await interaction.response.send_message(f"❌ {interaction.user.mention}, você não tem permissão para usar esse comando.")
+    
+            
+    @bot.tree.command(name="buscaraluno", description="Busca aluno no banco de dados")
+    async def buscaraluno(interaction: discord.Interaction, matricula: int):
+        id_user = interaction.user.id
+        userstring = str(id_user)
+        user_comparado = verificar_permissao(userstring)
+
+        if user_comparado == str(id_user):
+            aluno_info = get_aluno_info(matricula)
+
+            if aluno_info:
+                matricula_aluno = aluno_info.get("matricula")
+                nome = aluno_info.get("nome")
+                turma = aluno_info.get("turma")
+                id_banco = aluno_info.get("id")
+
+                embed = discord.Embed(
+                    title=f"Informações do Aluno",
+                    color=discord.Color.blurple()
+                )
+                embed.add_field(name="Matrícula", value=matricula_aluno, inline=True)
+                embed.add_field(name="Nome", value=nome, inline=True)
+                embed.add_field(name="Turma", value=turma, inline=True)
+                embed.add_field(name=f"ID: {id_banco}",value='', inline=True)
+
+                await interaction.response.send_message(embed=embed)
+            else:
+                await interaction.response.send_message("❌ {interaction.user.mention}, aluno não encontrado.")
+        else:
+            await interaction.response.send_message(f"❌ {interaction.user.mention}, você não tem permissão para usar esse comando.")
+
+
+    @bot.tree.command(name="verminitestes", description="Veja quais miniteste já foram respondidos")
+    async def verminitestes(interaction: discord.InteractionMessage):
+            member: discord.Member = None
+            member = interaction.user
+            id = member.id
+            matricula = get_matricula(str(id))
+            if matricula == None:
+                await interaction.response.send_message(f"❌ {interaction.user.mention}, você não está cadastrado no banco de dados.")
+            
+            else:
+                mini_respondidos = get_minitestes_por_matricula(matricula)
+                
+                # Criar um objeto de Embed
+                embed = discord.Embed(
+                    title=f"Minitestes: {matricula}",
+                    description=f"Aqui estão os minitestes respondidos:",
+                    color=discord.Color.blue()  # Cor do embed (pode ser personalizada)
+                )
+                # Verificar se há miniteste respondidos
+                if not mini_respondidos:
+                    embed.add_field(name="❌ Nenhum miniteste respondido encontrado", value="❌ Nenhum miniteste foi respondido por esta matrícula.")
+                else:
+                    # Adicionar informações sobre os miniteste respondidos ao embed
+                    for miniteste_numero in range(1, 18):
+                        if f"T{miniteste_numero}" in mini_respondidos:
+                            embed.add_field(name=f"T{miniteste_numero}", value="OK 🟩")
+                        else:
+                            embed.add_field(name=f"T{miniteste_numero}", value="N/A 🟥")
+                
+                # Enviar o embed como resposta
+                await interaction.response.send_message(embed=embed)
+            
+
+    
     bot.run(settings.TOKEN_BOT, root_logger=True)
 
 if __name__ == '__main__':

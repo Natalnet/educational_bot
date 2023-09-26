@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timedelta
 
 
-urlBD = ""
+urlBD = "https://monitor-bot-88c17-default-rtdb.firebaseio.com/"
 
 
 def cria_pergunta(pergunta, resposta):
@@ -107,7 +107,7 @@ def add_id(aluno_id, id):
 
 
 
-def comparar_id(matricula):
+def comparar_matricula(matricula):
     requisicao = le_alunos()
     matricula = int(matricula)
     
@@ -118,7 +118,7 @@ def comparar_id(matricula):
     return False
 
 
-def get_id(matricula):
+def get_matricula(matricula):
   requisicao = le_alunos()
 
   id_d = str(matricula)
@@ -283,7 +283,6 @@ def consolidar_turma(turma):
   nome_turma = turma
 
   # Obtém os dados do nó /firebase/alunos/
-  # Obtém os dados do nó /firebase/alunos/
   response = requests.get(urlBD + "alunos.json")
   dados_alunos = response.json()
 
@@ -298,6 +297,7 @@ def consolidar_turma(turma):
   else:
       print("Não há dados em /firebase/alunos/")
       
+
 def get_permissao_id(permi):
   requisicao = le_permissao()
 
@@ -389,7 +389,7 @@ def le_unidades():
   return(requisicao)
 
 def get_data_unidade():
-    requisicao = le_unidades()  # Substitua pela função que obtém os dados das unidades
+    requisicao = le_unidades() 
 
     datas_unidades = {}
 
@@ -398,3 +398,87 @@ def get_data_unidade():
             datas_unidades[unidade] = data
 
     return datas_unidades
+
+def get_alunos_sem_presenca():
+    requisicao = le_alunos()
+    alunos_sem_presenca = []
+
+    for id in requisicao.json():
+        aluno_info = requisicao.json()[id]
+        matricula = aluno_info.get("matricula")
+        frequencia = aluno_info.get("frequencia")
+        nome = aluno_info.get("nome")
+        turma = aluno_info.get("turma")
+
+        if matricula is not None and (frequencia is None or not frequencia):
+            alunos_sem_presenca.append({
+                "matricula": matricula,
+                "nome": nome,
+                "turma": turma
+            })
+
+    # Organize a lista de alunos sem presença por turma
+    alunos_sem_presenca_ordenados = sorted(alunos_sem_presenca, key=lambda x: x["turma"])
+
+    return alunos_sem_presenca_ordenados
+
+def get_alunos_sem_miniteste():
+    requisicao = le_alunos()
+    alunos_sem_miniteste = []
+
+    for id in requisicao.json():
+        aluno_info = requisicao.json()[id]
+        matricula = aluno_info.get("matricula")
+        minitestes = aluno_info.get("miniteste")
+        nome = aluno_info.get("nome")
+        turma = aluno_info.get("turma")
+
+        if matricula is not None and (minitestes is None or not minitestes):
+            alunos_sem_miniteste.append({
+                "matricula": matricula,
+                "nome": nome,
+                "turma": turma
+            })
+
+    # Organize a lista de alunos sem presença por turma
+    alunos_sem_presenca_ordenados = sorted(alunos_sem_miniteste, key=lambda x: x["turma"])
+
+    return alunos_sem_presenca_ordenados
+
+def get_aluno_info(matricula):
+    requisicao = le_alunos()
+    matricula = int(matricula)
+
+    for id in requisicao.json():
+        aluno_info = requisicao.json()[id]
+        if matricula == aluno_info['matricula']:
+            nome = aluno_info['nome']
+            matricula_aluno = aluno_info['matricula']
+            aluno_id = aluno_info['id']
+            turma = aluno_info['turma']
+
+            return {
+                "nome": nome,
+                "matricula": matricula_aluno,
+                "id": aluno_id,
+                "turma": turma
+            }
+
+    return None
+
+def get_minitestes_por_matricula(matricula):
+    requisicao = le_alunos()  # Supondo que você tenha uma função que retorna os dados dos alunos
+
+    minitestes_respondidos = []
+
+    for aluno_id in requisicao.json():
+        aluno_data = requisicao.json()[aluno_id]
+
+        if 'matricula' in aluno_data and aluno_data['matricula'] == matricula:
+            if 'miniteste' in aluno_data:
+                minitestes_respondidos.extend(aluno_data['miniteste'].keys())
+
+    # Remove duplicatas dos mini-testes (caso um aluno tenha respondido o mesmo mini-teste mais de uma vez)
+    minitestes_respondidos = list(set(minitestes_respondidos))
+
+    return minitestes_respondidos
