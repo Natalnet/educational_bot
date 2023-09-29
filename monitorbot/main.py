@@ -225,48 +225,29 @@ def run():
             await interaction.response.send_message(content=f"⛔ {interaction.user}, desculpe não há unidades disponíveis para teste no momento.")
             return
 
-        unidade_num = None
-        data_limite = None
-
         # Encontra a primeira data limite não vencida e a unidade correspondente
         for unidade, data in datas_unidades.items():
             data_unidade = datetime.datetime.strptime(data, "%d/%m/%Y").date()
 
             if data_unidade >= data_atual:
-                data_limite = data_unidade
                 unidade_num = int(unidade.split()[0])
-                break
+                if (
+                    (1 <= numero <= 6 and unidade_num == 1) or
+                    (7 <= numero <= 12 and unidade_num == 2) or
+                    (13 <= numero <= 17 and unidade_num == 3)
+                ):
+                    teste = get_teste(numero)
+                    if teste is not None:
+                        respostas = "\n".join(teste['resposta'].values())
+                        embed = discord.Embed(title=teste['pergunta'], description=respostas, color=0x0000FF)
+                        await interaction.response.send_message(embed=embed, view=ButtonsFor("T" + str(numero)))
+                        return
+                    else:
+                        await interaction.response.send_message(content=f"🚫 {interaction.user} este teste não existe, digite um teste válido!")
+                        return
 
-        # Verifica se há uma data limite válida
-        if data_limite is None:
-            await interaction.response.send_message(content=f"⛔ {interaction.user}, desculpe o prazo para realizar os testes já passou para todas as unidades disponíveis.")
-            return
-
-        # Define os intervalos de testes para cada unidade
-        if 1 <= numero <= 6:
-            required_unidade_num = 1
-        elif 7 <= numero <= 12:
-            required_unidade_num = 2
-        elif 13 <= numero <= 17:
-            required_unidade_num = 3
-        else:
-            await interaction.response.send_message(content="🚫 Número de teste inválido.")
-            return
-
-        # Verifica se a data limite para a unidade correspondente já passou
-        if data_atual > data_limite or unidade_num != required_unidade_num:
-            await interaction.response.send_message(content=f"⛔ ***{interaction.user}***, desculpe o prazo para realizar este teste já passou ou você não está na unidade correta.")
-            return
-
-        # Continue com a execução do teste normalmente
-        teste = get_teste(numero)
-
-        if teste is not None:
-            respostas = "\n".join(teste['resposta'].values())
-            embed = discord.Embed(title=teste['pergunta'], description=respostas, color=0x0000FF)
-            await interaction.response.send_message(embed=embed, view=ButtonsFor("T" + str(numero)))
-        else:
-            await interaction.response.send_message(content=f"🚫 {interaction.user} este teste não existe, digite um teste válido!")
+        # Se nenhum intervalo de teste válido foi encontrado
+        await interaction.response.send_message(content=f"⛔ {interaction.user}, desculpe o prazo para realizar este teste já passou ou você não está na unidade correta.")
     
     
     # classe para mostrar os botões das redes sociais.   
