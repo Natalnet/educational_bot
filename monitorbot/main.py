@@ -6,16 +6,18 @@ from discord import utils, app_commands, ui
 from discord.ext.commands import Context
 from re import A
 import datetime
-from api import get_aluno_id, get_nome, set_presenca, comparar_matricula, add_id, get_matricula, reset_id, get_turma, add_resposta, cria_aluno, cria_pergunta, le_logs, deleta_logs, get_log, get_teste, cria_permissao, verificar_permissao, get_frequencia, get_miniteste, consolidar_turma, get_permissao_id, remover_permissao, get_porcentagem_letras, get_total_alunos_responderam, cria_aluno, verificar_info, obter_alunos_cadastrados_firebase, get_data_unidade, get_alunos_sem_presenca, get_alunos_sem_miniteste, get_aluno_info, get_minitestes_por_matricula
+from api import get_aluno_id, get_nome, set_presenca, comparar_matricula, add_id, get_matricula, reset_id, get_turma, add_resposta, cria_aluno, cria_pergunta, le_logs, deleta_logs, get_log, get_teste, cria_permissao, verificar_permissao, get_frequencia, get_miniteste, consolidar_turma, get_permissao_id, remover_permissao, get_porcentagem_letras, get_total_alunos_responderam, cria_aluno, verificar_info, obter_alunos_cadastrados_firebase, get_data_unidade, get_alunos_sem_presenca, get_alunos_sem_miniteste, get_aluno_info, get_minitestes_por_matricula, le_alunos
 from colorama import Back, Fore, Style
 import time
 import os
 import json
 import xlsxwriter
-import typing
+import csv
 import io
 import pandas as pd
 import random
+from datetime import datetime
+import dotenv
 
 logger = settings.logging.getLogger('bot')
 
@@ -371,6 +373,9 @@ def run():
             embedVar.add_field(name="/alunosemfrequencia", value="o comando mostra os alunos que não possuem frequência no banco de dados", inline=False)
             embedVar.add_field(name="/alunosemteste", value="o comando mostra os alunos que não possuem miniteste respondido no banco de dados", inline=False)
             embedVar.add_field(name="/buscaraluno", value="o comando o aluno no banco de dados", inline=False)
+            embedVar.add_field(name="/vertestealuno", value="o comando mostra os minitestes feito pelo aluno de matricula informada", inline=False)
+            embedVar.add_field(name="/exportaralunosemfreq", value="o comando exporta um csv com os alunos sem frequencia no banco de dados", inline=False)
+            embedVar.add_field(name="/exportaralunosemteste", value="o comando exporta um csv com os alunos sem miniteste no banco de dados", inline=False)
             await interaction.response.send_message(embed=embedVar)
         else:
             await interaction.response.send_message(f"❌​ {interaction.user}, você não tem permissão para usar esse comando!")
@@ -777,11 +782,11 @@ def run():
             else:
                 await interaction.response.send_message("❌ {interaction.user.mention}, aluno não encontrado.")
         else:
-            await interaction.response.send_message(f"❌ {interaction.user.mention}, você não tem permissão para usar esse comando.")
+            await interaction.response.send_message(f"❌ {interaction.user}, você não tem permissão para usar esse comando.")
 
 
     @bot.tree.command(name="verminitestes", description="Veja quais miniteste já foram respondidos")
-    async def verminitestes(interaction: discord.InteractionMessage):
+    async def verminitestes(interaction: discord.Interaction):
             member: discord.Member = None
             member = interaction.user
             id = member.id
@@ -811,9 +816,98 @@ def run():
                 
                 # Enviar o embed como resposta
                 await interaction.response.send_message(embed=embed)
-            
-
     
+    @bot.tree.command(name="vertestealuno", description="Veja quantos miniteste já foram respondidos pelo aluno informado")
+    async def verminitestedoaluno(interaction: discord.Interaction, matricula: int):
+            if matricula == None:
+                await interaction.response.send_message(f"❌ {interaction.user.mention}, você não está cadastrado no banco de dados.")
+            else:
+                mini_respondidos = get_minitestes_por_matricula(matricula)
+                embed = discord.Embed(
+                    title=f"Minitestes: {matricula}",
+                    description=f"Aqui estão os minitestes respondidos:",
+                    color=discord.Color.blue()
+                )
+                if not mini_respondidos:
+                    embed.add_field(name="❌ Nenhum miniteste respondido encontrado", value="❌ Nenhum miniteste foi respondido por esta matrícula.")
+                else:
+                    for miniteste_numero in range(1, 18):
+                        if f"T{miniteste_numero}" in mini_respondidos:
+                            embed.add_field(name=f"T{miniteste_numero}", value="OK 🟩")
+                        else:
+                            embed.add_field(name=f"T{miniteste_numero}", value="N/A 🟥")
+                await interaction.response.send_message(embed=embed)
+    
+    
+    @bot.tree.command(name="exportaralunoteste", description="CSV dos alunos que não realizaram o miniteste")
+    async def exportaralunoteste(interaction: discord.Interaction):
+        id_user = interaction.user.id
+        userstring = str(id_user)
+        user_comparado = verificar_permissao(userstring)
+
+        if user_comparado == str(id_user):
+            alunos_sem_miniteste = get_alunos_sem_miniteste()
+
+            if alunos_sem_miniteste:
+                # Cria um arquivo CSV em memória
+                csv_buffer = io.StringIO()
+                csv_writer = csv.writer(csv_buffer)
+
+                # Escreve os cabeçalhos
+                csv_writer.writerow(["Matrícula", "Nome", "Turma"])
+
+                # Escreve os dados dos alunos no arquivo CSV
+                for aluno in alunos_sem_miniteste:
+                    csv_writer.writerow([aluno["matricula"], aluno["nome"], aluno["turma"]])
+
+                csv_buffer.seek(0)  # Volta ao início do buffer
+
+                # Envia o arquivo CSV como parte da resposta
+                await interaction.response.send_message(
+                    f"📊 {interaction.user.mention}, aqui está a lista de alunos sem miniteste:",
+                    file=discord.File(csv_buffer, filename="alunos_sem_miniteste.csv")
+                )
+            else:
+                await interaction.response.send_message("✅ {interaction.user.mention}, todos os alunos fizeram o miniteste!")
+
+        else:
+            await interaction.response.send_message(f"❌ {interaction.user.mention}, você não tem permissão para usar esse comando.")
+    
+    @bot.tree.command(name="exportaralunosemfreq", description="CSV dos alunos que não possuem frequência")
+    async def exportaralunofreq(interaction: discord.Interaction):
+        id_user = interaction.user.id
+        userstring = str(id_user)
+        user_comparado = verificar_permissao(userstring)
+
+        if user_comparado == str(id_user):
+            alunos_sem_presenca = get_alunos_sem_presenca()
+
+            if alunos_sem_presenca:
+                # Cria um arquivo CSV em memória
+                csv_buffer = io.StringIO()
+                csv_writer = csv.writer(csv_buffer)
+
+                # Escreve os cabeçalhos
+                csv_writer.writerow(["Matrícula", "Nome", "Turma"])
+
+                # Escreve os dados dos alunos no arquivo CSV
+                for aluno in alunos_sem_presenca:
+                    csv_writer.writerow([aluno["matricula"], aluno["nome"], aluno["turma"]])
+
+                csv_buffer.seek(0)  # Volta ao início do buffer
+
+                # Envia o arquivo CSV como parte da resposta
+                await interaction.response.send_message(
+                    f"✅ {interaction.user.mention}, aqui está a lista de alunos sem presença:",
+                    file=discord.File(csv_buffer, filename="alunos_sem_presenca.csv")
+                )
+            else:
+                await interaction.response.send_message("✅ {interaction.user.mention}, todos os alunos registraram presença!")
+
+        else:
+            await interaction.response.send_message(f"❌ {interaction.user.mention}, você não tem permissão para usar esse comando.")
+            
+        
     bot.run(settings.TOKEN_BOT, root_logger=True)
 
 if __name__ == '__main__':
