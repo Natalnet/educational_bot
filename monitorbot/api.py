@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timedelta
 
 
-urlBD = "https://monitor-bot-88c17-default-rtdb.firebaseio.com/"
+urlBD = ""
 
 
 def cria_pergunta(pergunta, resposta):
